@@ -8,12 +8,13 @@ const API_URL = 'https://ai-resume-analyzer-backend-5qzk.onrender.com'
 
 export default function App() {
   const [file, setFile] = useState(null)
+  const [jdFile, setJdFile] = useState(null)
   const [jobDescription, setJobDescription] = useState('')
   const [result, setResult] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  const canAnalyze = file && jobDescription.trim().length > 10
+  const canAnalyze = file && (jdFile || jobDescription.trim().length > 10)
 
   const handleAnalyze = async () => {
     if (!canAnalyze) return
@@ -25,9 +26,15 @@ export default function App() {
     try {
       const formData = new FormData()
       formData.append('resume', file)
-      formData.append('job_description', jobDescription)
+      if (jdFile) {
+        formData.append('jd_file', jdFile)
+      } else {
+        formData.append('job_description', jobDescription)
+      }
 
       const res = await fetch(`${API_URL}/analyze`, {
+
+
         method: 'POST',
         body: formData,
       })
@@ -63,11 +70,15 @@ export default function App() {
 
       {/* Upload Section */}
       <ResumeUpload
+
         file={file}
         setFile={setFile}
+        jdFile={jdFile}
+        setJdFile={setJdFile}
         jobDescription={jobDescription}
         setJobDescription={setJobDescription}
       />
+
 
       {/* Analyze Button */}
       <button

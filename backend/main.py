@@ -29,54 +29,52 @@ app.add_middleware(
 async def root():
     return {"message": "AI Resume Analyzer API is running 🚀"}
 
+from typing import Optional
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 
 @app.post("/analyze")
 async def analyze_resume(
     resume: UploadFile = File(...),
-    job_description: str = Form(...),
+    jd_file: Optional[UploadFile] = File(None),
+    job_description: str = Form(""),
 ):
     """
     Analyze a resume PDF against a job description.
-
-    - **resume**: PDF file upload
-    - **job_description**: Plain-text job description
     """
-    # Validate file type
+    # 1. Validate the resume
     if not resume.filename.lower().endswith(".pdf"):
-        raise HTTPException(
-            status_code=400,
-            detail="Only PDF files are supported. Please upload a .pdf file.",
-        )
+        raise HTTPException(status_code=400, detail="Only PDF files are supported.")
 
-    # Read file bytes
     file_bytes = await resume.read()
     if len(file_bytes) == 0:
         raise HTTPException(status_code=400, detail="Uploaded file is empty.")
 
-    # Extract text from PDF
     try:
         resume_text = extract_text_from_pdf(file_bytes)
     except Exception as e:
-        raise HTTPException(
-            status_code=422,
-            detail=f"Could not parse PDF: {str(e)}",
-        )
+        raise HTTPException(status_code=422, detail=f"Could not parse PDF: {str(e)}")
 
-    if not resume_text.strip():
-        raise HTTPException(
-            status_code=422,
-            detail="Could not extract any text from the PDF. "
-            "Make sure it is not a scanned image.",
-        )
+    # 2. Handle the Job Description (File or Text)
+    jd_text = ""
+    if jd_file and jd_file.filename.lower().endswith(".pdf"):
+        jd_bytes = await jd_file.read()
+        try:
+            jd_text = extract_text_from_pdf(jd_bytes)
+        except:
+             pass
+    
+    if not jd_text.strip():
+        jd_text = job_description
 
-    # Extract keywords
+    if not jd_text.strip() or not resume_text.strip():
+        raise HTTPException(status_code=422, detail="Both Resume and Job description text are required.")
+
+    # 3. Extract keywords and calculate
     resume_keywords = extract_keywords(resume_text)
-    jd_keywords = extract_keywords(job_description)
+    jd_keywords = extract_keywords(jd_text)
 
-    # Calculate score
     result = calculate_score(resume_keywords, jd_keywords)
 
-    # Generate suggestions
     suggestions = generate_suggestions(
         score=result["ats_score"],
         missing_keywords=result["missing_keywords"],

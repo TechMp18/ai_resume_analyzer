@@ -42,23 +42,39 @@ def extract_text_from_pdf(file_bytes: bytes) -> str:
 
 
 def extract_keywords(text: str) -> set[str]:
-    """
-    Extract meaningful keywords from text.
-    - Lowercases everything
-    - Keeps only alphanumeric tokens (+ common tech symbols like #, +, .)
-    - Removes stopwords and very short tokens
-    """
-    # Lowercase
     text = text.lower()
 
-    # Tokenize: keep words, and tech terms like c++, c#, .net, node.js
+    # 1. Pre-defined multi-word technical skills to look for
+    compound_skills = [
+        "machine learning", "data science", "full stack", "full-stack",
+        "front end", "back end", "node.js", "react native", "react.js",
+        "artificial intelligence", "deep learning", "computer vision",
+        "natural language processing", "ci/cd", "object oriented", 
+        "rest api", "restful api", "problem solving"
+    ]
+    
+    keywords = set()
+    
+    # Find multi-word skills first, add them, and remove them from the text
+    for skill in compound_skills:
+        if skill in text:
+            keywords.add(skill.replace("-", " ")) # normalize hyphens
+            text = text.replace(skill, "")
+
+    # 2. Extract single words
     tokens = re.findall(r"[a-z][a-z0-9.#+]*[a-z0-9+#]|[a-z]", text)
 
-    # Filter stopwords and single-char tokens (except meaningful ones)
-    meaningful_single = {"r", "c"}  # programming languages
-    keywords = set()
+    # 3. Extra words that are NOT skills (we ignore these)
+    GENERIC_WORDS = {
+        "company", "fast", "paced", "experience", "role", "years", "seeking", 
+        "looking", "candidate", "understanding", "knowledge", "required", 
+        "preferred", "skills", "ability", "environment", "team", "strong"
+    }
+
+    meaningful_single = {"r", "c"}  # Keep R and C programming languages
+    
     for token in tokens:
-        if token in STOPWORDS:
+        if token in STOPWORDS or token in GENERIC_WORDS:
             continue
         if len(token) == 1 and token not in meaningful_single:
             continue
