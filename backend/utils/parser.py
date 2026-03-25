@@ -43,41 +43,35 @@ def extract_text_from_pdf(file_bytes: bytes) -> str:
 
 def extract_keywords(text: str) -> set[str]:
     text = text.lower()
-
-    # 1. Pre-defined multi-word technical skills to look for
-    compound_skills = [
-        "machine learning", "data science", "full stack", "full-stack",
-        "front end", "back end", "node.js", "react native", "react.js",
-        "artificial intelligence", "deep learning", "computer vision",
-        "natural language processing", "ci/cd", "object oriented", 
-        "rest api", "restful api", "problem solving"
-    ]
     
-    keywords = set()
-    
-    # Find multi-word skills first, add them, and remove them from the text
-    for skill in compound_skills:
-        if skill in text:
-            keywords.add(skill.replace("-", " ")) # normalize hyphens
-            text = text.replace(skill, "")
+    # This is your new ALLOWLISIT. 
+    # You can add absolutely any skills you want to this list!
+    VALID_SKILLS = {
+        # Telecom & Hardware (from your JD)
+        "fpga", "vhdl", "verilog", "telecom", "dwdm", "otn", "ptn", "sdn", 
+        "mpls", "ethernet", "vlsi", "embedded", "hardware", "board design", 
+        "5g", "4g", "lte", "wireless", "wireline", "sonet", "gpon", "iot",
 
-    # 2. Extract single words
-    tokens = re.findall(r"[a-z][a-z0-9.#+]*[a-z0-9+#]|[a-z]", text)
+        # Software & Web
+        "python", "java", "c++", "c", "c#", "javascript", "typescript", 
+        "react", "angular", "node.js", "html", "css", "full stack", 
+        "front end", "back end", "rest api", "restful api",
 
-    # 3. Extra words that are NOT skills (we ignore these)
-    GENERIC_WORDS = {
-        "company", "fast", "paced", "experience", "role", "years", "seeking", 
-        "looking", "candidate", "understanding", "knowledge", "required", 
-        "preferred", "skills", "ability", "environment", "team", "strong"
+        # Cloud & Data
+        "aws", "azure", "gcp", "docker", "kubernetes", "sql", "mysql", 
+        "mongodb", "machine learning", "data science", "artificial intelligence", 
+        "deep learning", "computer vision", "ci/cd",
+        
+        # General
+        "object oriented", "problem solving", "agile", "scrum"
     }
 
-    meaningful_single = {"r", "c"}  # Keep R and C programming languages
+    keywords = set()
     
-    for token in tokens:
-        if token in STOPWORDS or token in GENERIC_WORDS:
-            continue
-        if len(token) == 1 and token not in meaningful_single:
-            continue
-        keywords.add(token)
+    # We simply check if the skill exists anywhere in the messy text
+    # This automatically bypasses spacing glitches and ignores normal English words!
+    for skill in VALID_SKILLS:
+        if skill in text:
+            keywords.add(skill)
 
     return keywords
