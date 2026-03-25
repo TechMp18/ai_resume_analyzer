@@ -4,7 +4,7 @@ import ScoreDisplay from './components/ScoreDisplay.jsx'
 import MissingKeywords from './components/MissingKeywords.jsx'
 import Suggestions from './components/Suggestions.jsx'
 
-const API_URL = 'http://localhost:8000'
+const API_URL = 'https://ai-resume-analyzer-backend-5qzk.onrender.com'
 
 export default function App() {
   const [file, setFile] = useState(null)
